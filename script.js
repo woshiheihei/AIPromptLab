@@ -1,3 +1,23 @@
+// 保存数据到 localStorage
+function saveData() {
+    localStorage.setItem('categories', JSON.stringify(categories));
+    localStorage.setItem('prompts', JSON.stringify(prompts));
+}
+
+// 从 localStorage 加载数据
+function loadData() {
+    const savedCategories = localStorage.getItem('categories');
+    const savedPrompts = localStorage.getItem('prompts');
+
+    if (savedCategories) {
+        categories = JSON.parse(savedCategories);
+    }
+
+    if (savedPrompts) {
+        prompts = JSON.parse(savedPrompts);
+    }
+}
+
 function parseTemplate() {
     const template = document.getElementById('template').value;
     const regex = /\{\{(\w+)\}\}/g;
@@ -52,7 +72,7 @@ function generatePrompt() {
 
     // 复制生成的提示词到剪贴板
     navigator.clipboard.writeText(generatedPrompt).then(() => {
-        showNotification('提示词已复制到剪贴板！');
+        showNotification('提词已复制到剪贴板！');
     }).catch(err => {
         console.error('无法复制到剪贴板:', err);
         showNotification('无法复制到剪贴板，请手动复制。', 'error');
@@ -101,7 +121,7 @@ let prompts = [
             language: {
                 description: '编程语言',
                 example: 'Python',
-                restrictions: '应该是一个有效的编程语言名称'
+                restrictions: '应该是一个有效编程语言名称'
             },
             code: {
                 description: '需要注释的代码',
@@ -118,7 +138,7 @@ let prompts = [
         usage: 40,
         placeholders: {
             genre: {
-                description: '故事的类型',
+                description: '事的类型',
                 example: '科幻',
                 restrictions: '应该是一个文学类型'
             },
@@ -149,7 +169,7 @@ let prompts = [
             USP: {
                 description: '独特卖点',
                 example: '使用机器学习算法个性化的营养建议',
-                restrictions: '应该是公司的核心竞争优势'
+                restrictions: '应该是公司的核心竞争优'
             },
             target_market: {
                 description: '目标市场',
@@ -185,7 +205,7 @@ let prompts = [
         usage: 20,
         placeholders: {
             habit: {
-                description: '想要培养的习惯',
+                description: '想的习惯',
                 example: '每天阅读30分钟',
                 restrictions: '应该是一个具体的、可衡量的习惯'
             },
@@ -200,6 +220,8 @@ let prompts = [
 
 // 初始化函数
 function init() {
+    loadData(); // 加载保存的数据
+
     if (document.body.classList.contains('home')) {
         renderCategories();
         renderPopularPrompts();
@@ -234,14 +256,18 @@ function renderCategories() {
 }
 
 // 渲染热门提示词
-function renderPopularPrompts() {
+function renderPopularPrompts(filteredPrompts = prompts) {
     const popularPromptList = document.getElementById('popularPromptList');
-    popularPromptList.innerHTML = prompts.slice(0, 6).map(prompt => `
-        <div class="bg-white p-4 rounded-md shadow hover:shadow-md transition-shadow">
-            <h3 class="font-bold">${prompt.title}</h3>
-            <p class="text-sm text-gray-600">${prompt.category}</p>
-        </div>
-    `).join('');
+    popularPromptList.innerHTML = filteredPrompts
+        .sort((a, b) => b.usage - a.usage)
+        .slice(0, 6)
+        .map(prompt => `
+            <a href="prompt.html?id=${prompt.id}" class="bg-white p-4 rounded-md shadow hover:shadow-md transition-shadow cursor-pointer">
+                <h3 class="font-bold text-lg mb-2">${prompt.title}</h3>
+                <p class="text-sm text-gray-600">${prompt.category}</p>
+                <p class="text-sm text-gray-500 mt-2">使用次数: ${prompt.usage}</p>
+            </a>
+        `).join('');
 }
 
 // 设置搜索功能
@@ -439,7 +465,24 @@ function setupPromptEditPage() {
         }
     }
 
-    document.getElementById('promptForm').addEventListener('submit', handlePromptSubmit);
+    // 使用 addEventListener 而不是直接赋值
+    const form = document.getElementById('promptForm');
+    if (form) {
+        form.addEventListener('submit', handlePromptSubmit);
+    }
+
+    // 添加输入事件监听器
+    const titleInput = document.getElementById('promptTitle');
+    const templateInput = document.getElementById('promptTemplate');
+    if (titleInput) {
+        titleInput.addEventListener('input', updatePreview);
+    }
+    if (templateInput) {
+        templateInput.addEventListener('input', () => {
+            detectPlaceholders();
+            updatePreview();
+        });
+    }
 }
 
 // 填充分类选择下拉菜单
@@ -507,7 +550,11 @@ function removePlaceholderField(button) {
 
 // 检测模板中的占位符
 function detectPlaceholders() {
-    const template = document.getElementById('promptTemplate').value;
+    const templateInput = document.getElementById('promptTemplate');
+    const placeholdersContainer = document.getElementById('placeholders');
+    if (!templateInput || !placeholdersContainer) return;
+
+    const template = templateInput.value;
     const placeholderRegex = /\{\{(\w+)\}\}/g;
     const detectedPlaceholders = new Set();
     let match;
@@ -516,9 +563,12 @@ function detectPlaceholders() {
         detectedPlaceholders.add(match[1]);
     }
 
-    const existingPlaceholders = new Set(Array.from(document.getElementById('placeholders').children).map(
-        child => child.querySelector('input[name^="placeholderName_"]').value
-    ));
+    const existingPlaceholders = new Set(Array.from(placeholdersContainer.children).map(
+        child => {
+            const input = child.querySelector('input[name^="placeholderName_"]');
+            return input ? input.value : null;
+        }
+    ).filter(Boolean));
 
     // 添加新检测到的占位符
     for (const placeholder of detectedPlaceholders) {
@@ -530,16 +580,17 @@ function detectPlaceholders() {
     // 移除不再使用的占位符
     for (const placeholder of existingPlaceholders) {
         if (!detectedPlaceholders.has(placeholder)) {
-            const placeholderField = Array.from(document.getElementById('placeholders').children).find(
-                child => child.querySelector('input[name^="placeholderName_"]').value === placeholder
+            const placeholderField = Array.from(placeholdersContainer.children).find(
+                child => {
+                    const input = child.querySelector('input[name^="placeholderName_"]');
+                    return input && input.value === placeholder;
+                }
             );
             if (placeholderField) {
                 placeholderField.remove();
             }
         }
     }
-
-    updatePreview();
 }
 
 // 加载现有占位符
@@ -551,7 +602,7 @@ function loadPlaceholders(placeholders) {
 
 // 处理提示词表单提交
 function handlePromptSubmit(event) {
-    event.preventDefault();
+    event.preventDefault(); // 阻止表单的默认提交行为
 
     const title = document.getElementById('promptTitle').value;
     const category = document.getElementById('promptCategory').value;
@@ -582,22 +633,35 @@ function handlePromptSubmit(event) {
         showNotification('新提示词已创建');
     }
 
-    // 重定向到浏览页面
-    window.location.href = 'browse.html';
+    saveData(); // 保存数据
+    
+    // 使用 setTimeout 来确保通知显示后再跳转
+    setTimeout(() => {
+        window.location.href = 'browse.html';
+    }, 1500);
 }
 
 // 获取占位符数据
 function getPlaceholdersData() {
-    const placeholderFields = document.getElementById('placeholders').children;
+    const placeholdersContainer = document.getElementById('placeholders');
+    if (!placeholdersContainer) return {};
+
+    const placeholderFields = placeholdersContainer.children;
     const placeholders = {};
 
     for (const field of placeholderFields) {
-        const name = field.querySelector('input[name^="placeholderName_"]').value;
-        const description = field.querySelector('input[name^="placeholderDescription_"]').value;
-        const example = field.querySelector('input[name^="placeholderExample_"]').value;
-        const restrictions = field.querySelector('input[name^="placeholderRestrictions_"]').value;
+        const nameInput = field.querySelector('input[name^="placeholderName_"]');
+        const descriptionInput = field.querySelector('input[name^="placeholderDescription_"]');
+        const exampleInput = field.querySelector('input[name^="placeholderExample_"]');
+        const restrictionsInput = field.querySelector('input[name^="placeholderRestrictions_"]');
 
-        placeholders[name] = { description, example, restrictions };
+        if (nameInput && nameInput.value) {
+            placeholders[nameInput.value] = {
+                description: descriptionInput ? descriptionInput.value : '',
+                example: exampleInput ? exampleInput.value : '',
+                restrictions: restrictionsInput ? restrictionsInput.value : ''
+            };
+        }
     }
 
     return placeholders;
@@ -630,6 +694,7 @@ function deletePrompt(id) {
         prompts = prompts.filter(prompt => prompt.id !== id);
         renderAdminPromptList();
         showNotification('提示词已删除');
+        saveData(); // 保存数据
     }
 }
 
@@ -656,6 +721,7 @@ function deleteCategory(category) {
         });
         renderAdminCategoryList();
         showNotification('类别已删除');
+        saveData(); // 保存数据
     }
 }
 
@@ -671,6 +737,7 @@ function setupAddCategory() {
             renderAdminCategoryList();
             newCategoryInput.value = '';
             showNotification('新类别已添加');
+            saveData(); // 保存数据
         } else if (categories.includes(newCategory)) {
             showNotification('该类别已存在', 'error');
         } else {
@@ -693,8 +760,14 @@ function setupPreview() {
 // 更新预览
 function updatePreview() {
     const previewArea = document.getElementById('previewArea');
-    const title = document.getElementById('promptTitle').value;
-    const template = document.getElementById('promptTemplate').value;
+    const titleInput = document.getElementById('promptTitle');
+    const templateInput = document.getElementById('promptTemplate');
+    const placeholdersContainer = document.getElementById('placeholders');
+
+    if (!previewArea || !titleInput || !templateInput || !placeholdersContainer) return;
+
+    const title = titleInput.value || '';
+    const template = templateInput.value || '';
     const placeholders = getPlaceholdersData();
 
     let previewHtml = `<h4 class="font-bold mb-2">${title}</h4>`;
@@ -707,9 +780,9 @@ function updatePreview() {
                 <div class="mb-2">
                     <strong>${name}:</strong>
                     <ul class="list-disc list-inside pl-4">
-                        <li>描述：${info.description}</li>
-                        <li>示例：${info.example}</li>
-                        <li>限制：${info.restrictions}</li>
+                        <li>描述：${info.description || ''}</li>
+                        <li>示例：${info.example || ''}</li>
+                        <li>限制：${info.restrictions || ''}</li>
                     </ul>
                 </div>
             `;
