@@ -72,7 +72,7 @@ function generatePrompt() {
 
     // 复制生成的提示词到剪贴板
     navigator.clipboard.writeText(generatedPrompt).then(() => {
-        showNotification('提已复制到剪贴板！');
+        showNotification('提复制到剪贴板！');
     }).catch(err => {
         console.error('无法复制到剪贴板:', err);
         showNotification('无法复制到剪贴板，请手动复制。', 'error');
@@ -106,7 +106,7 @@ let prompts = [
         placeholders: {
             topic: {
                 description: '你想要生成 Wikipedia 页面的主题',
-                example: '人工智能',
+                example: '人工智���',
                 restrictions: '应该是一个名词或短语，不要太长'
             }
         }
@@ -138,7 +138,7 @@ let prompts = [
         usage: 40,
         placeholders: {
             genre: {
-                description: '事类型',
+                description: '事类',
                 example: '科幻',
                 restrictions: '应该是一个文学类型'
             },
@@ -361,7 +361,6 @@ function setupPromptDetailPage() {
             document.getElementById('resultSection').classList.add('hidden');
         } else {
             displayFinalPrompt(prompt.template);
-            document.getElementById('customizeSection').classList.add('hidden');
         }
         setupCopyButton();
         setupEditButton(promptId);
@@ -455,6 +454,7 @@ function setupGenerateButton(prompt) {
             generatedPrompt = generatedPrompt.replace(new RegExp(`\\{\\{${placeholder}\\}\\}`, 'g'), value);
         }
         displayFinalPrompt(generatedPrompt);
+        document.getElementById('resultSection').classList.remove('hidden');
     });
 }
 
@@ -462,7 +462,6 @@ function setupGenerateButton(prompt) {
 function displayFinalPrompt(promptText) {
     const finalPromptText = document.getElementById('finalPromptText');
     finalPromptText.textContent = promptText;
-    document.getElementById('resultSection').classList.remove('hidden');
 }
 
 // 设置复制按钮
@@ -660,7 +659,7 @@ function handlePromptSubmit(event) {
             showNotification('提示词已更新');
         }
     } else {
-        // 创建新提示词
+        // 创建新���示词
         const newPrompt = {
             id: prompts.length + 1,
             title,

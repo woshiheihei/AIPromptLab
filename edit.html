@@ -45,15 +45,16 @@
                 </div>
 
                 <div id="placeholders" class="mb-4">
-                    <h3 class="text-lg font-medium text-gray-700 mb-2">占位符：</h3>
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-lg font-medium text-gray-700">占位符：</h3>
+                        <button type="button" id="addPlaceholder" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-300">
+                            添加占位符
+                        </button>
+                    </div>
                     <!-- 占位符输入字段将通过 JavaScript 动态添加 -->
                 </div>
 
-                <button type="button" id="addPlaceholder" class="mb-4 bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-300">
-                    添加占位符
-                </button>
-
-                <div class="text-center">
+                <div class="text-right">
                     <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-300">
                         保存提示词
                     </button>
