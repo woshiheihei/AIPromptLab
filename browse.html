@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>浏览提示词 - 提示词收集平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen browse">
+    <nav class="bg-indigo-600 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="index.html" class="text-2xl font-bold">提示词收集平台</a>
+            <div>
+                <a href="index.html" class="hover:underline mr-4">首页</a>
+                <a href="browse.html" class="hover:underline mr-4">浏览提示词</a>
+                <a href="edit.html" class="hover:underline mr-4">创建提示词</a>
+                <a href="admin.html" class="hover:underline">管理</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 py-8">
+        <h2 class="text-3xl font-bold mb-6">浏览提示词</h2>
+
+        <div class="mb-6 flex justify-between items-center">
+            <div>
+                <label for="categoryFilter" class="mr-2">分类筛选：</label>
+                <select id="categoryFilter" class="p-2 rounded-md">
+                    <option value="">全部</option>
+                    <!-- 分类选项将通过 JavaScript 动态添加 -->
+                </select>
+            </div>
+            <div>
+                <label for="sortOrder" class="mr-2">排序：</label>
+                <select id="sortOrder" class="p-2 rounded-md">
+                    <option value="newest">最新</option>
+                    <option value="popular">最常用</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="promptList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- 提示词列表将通过 JavaScript 动态添加 -->
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
