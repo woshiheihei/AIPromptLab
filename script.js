@@ -72,7 +72,7 @@ function generatePrompt() {
 
     // 复制生成的提示词到剪贴板
     navigator.clipboard.writeText(generatedPrompt).then(() => {
-        showNotification('提词已复制到剪贴板！');
+        showNotification('提已复制到剪贴板！');
     }).catch(err => {
         console.error('无法复制到剪贴板:', err);
         showNotification('无法复制到剪贴板，请手动复制。', 'error');
@@ -138,7 +138,7 @@ let prompts = [
         usage: 40,
         placeholders: {
             genre: {
-                description: '事的类型',
+                description: '事类型',
                 example: '科幻',
                 restrictions: '应该是一个文学类型'
             },
@@ -205,7 +205,7 @@ let prompts = [
         usage: 20,
         placeholders: {
             habit: {
-                description: '想的习惯',
+                description: '想习惯',
                 example: '每天阅读30分钟',
                 restrictions: '应该是一个具体的、可衡量的习惯'
             },
@@ -356,36 +356,68 @@ function setupPromptDetailPage() {
 
     if (prompt) {
         renderPromptDetail(prompt);
-        createInputFields(prompt);
-        setupGenerateButton(prompt);
+        if (Object.keys(prompt.placeholders).length > 0) {
+            setupCustomizeSection(prompt);
+            document.getElementById('resultSection').classList.add('hidden');
+        } else {
+            displayFinalPrompt(prompt.template);
+            document.getElementById('customizeSection').classList.add('hidden');
+        }
+        setupCopyButton();
+        setupEditButton(promptId);
     } else {
         document.getElementById('promptDetail').innerHTML = '<p class="text-red-500">提示词未找到</p>';
     }
 }
 
+// 设置编辑按钮
+function setupEditButton(promptId) {
+    const editButton = document.getElementById('editPromptButton');
+    editButton.addEventListener('click', () => {
+        window.location.href = `edit.html?id=${promptId}`;
+    });
+}
+
 // 渲染提示词详情
 function renderPromptDetail(prompt) {
     const promptDetail = document.getElementById('promptDetail');
-    promptDetail.innerHTML = `
-        <h2 class="text-2xl font-bold mb-4">${prompt.title}</h2>
+    const promptTitle = document.getElementById('promptTitle');
+    
+    promptTitle.textContent = prompt.title;
+    
+    const detailContent = document.createElement('div');
+    detailContent.innerHTML = `
         <p class="text-gray-600 mb-4">分类：${prompt.category}</p>
         <p class="mb-2">模板：</p>
         <pre class="bg-gray-100 p-4 rounded-md whitespace-pre-wrap mb-4">${prompt.template}</pre>
-        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-            <p class="font-bold">占位符说明：</p>
-            <ul class="list-disc list-inside">
-                ${Object.entries(prompt.placeholders).map(([key, info]) => `
-                    <li><span class="font-semibold">${key}:</span> ${info.description} (示例: ${info.example})</li>
-                `).join('')}
-            </ul>
-        </div>
+        ${Object.keys(prompt.placeholders).length > 0 ? `
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                <p class="font-bold">占位符说明：</p>
+                <ul class="list-disc list-inside">
+                    ${Object.entries(prompt.placeholders).map(([key, info]) => `
+                        <li><span class="font-semibold">${key}:</span> ${info.description} (示例: ${info.example})</li>
+                    `).join('')}
+                </ul>
+            </div>
+        ` : ''}
     `;
+    
+    promptDetail.appendChild(detailContent);
+}
+
+// 设置自定义部分
+function setupCustomizeSection(prompt) {
+    const customizeSection = document.getElementById('customizeSection');
+    customizeSection.classList.remove('hidden');
+    
+    createInputFields(prompt);
+    setupGenerateButton(prompt);
 }
 
 // 创建输入字段
 function createInputFields(prompt) {
     const inputFieldsContainer = document.getElementById('inputFields');
-    inputFieldsContainer.innerHTML = '<h3 class="text-xl font-bold mb-4">自定义提示词</h3>';
+    inputFieldsContainer.innerHTML = '';
     
     for (const [placeholder, info] of Object.entries(prompt.placeholders)) {
         const div = document.createElement('div');
@@ -416,24 +448,29 @@ function createInputFields(prompt) {
 // 设置生成按钮
 function setupGenerateButton(prompt) {
     const generateButton = document.getElementById('generateButton');
-    const generatedPromptContainer = document.getElementById('generatedPrompt');
-    const generatedPromptText = document.getElementById('generatedPromptText');
-    const copyButton = document.getElementById('copyButton');
-
     generateButton.addEventListener('click', () => {
         let generatedPrompt = prompt.template;
-
         for (const placeholder of Object.keys(prompt.placeholders)) {
             const value = document.getElementById(placeholder).value;
             generatedPrompt = generatedPrompt.replace(new RegExp(`\\{\\{${placeholder}\\}\\}`, 'g'), value);
         }
-
-        generatedPromptText.textContent = generatedPrompt;
-        generatedPromptContainer.classList.remove('hidden');
+        displayFinalPrompt(generatedPrompt);
     });
+}
 
+// 显示最终提示词
+function displayFinalPrompt(promptText) {
+    const finalPromptText = document.getElementById('finalPromptText');
+    finalPromptText.textContent = promptText;
+    document.getElementById('resultSection').classList.remove('hidden');
+}
+
+// 设置复制按钮
+function setupCopyButton() {
+    const copyButton = document.getElementById('copyButton');
     copyButton.addEventListener('click', () => {
-        navigator.clipboard.writeText(generatedPromptText.textContent).then(() => {
+        const finalPromptText = document.getElementById('finalPromptText').textContent;
+        navigator.clipboard.writeText(finalPromptText).then(() => {
             showNotification('提示词已复制到剪贴板！');
         }).catch(err => {
             console.error('无法复制到剪贴板:', err);
@@ -463,6 +500,9 @@ function setupPromptEditPage() {
         } else {
             showNotification('提示词未找到', 'error');
         }
+    } else {
+        // 创建新提示词
+        document.getElementById('pageTitle').textContent = '创建新提示词';
     }
 
     // 使用 addEventListener 而不是直接赋值
